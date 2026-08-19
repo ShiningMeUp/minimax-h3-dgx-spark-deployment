@@ -22,7 +22,7 @@
 
 **ComfyUI 访问**：`http://10.0.0.XXX:8188` / `:4.7:8188` / `:4.8:8188` / `:4.9:8188`
 
-**启动脚本**：`/home/nvidia/ComfyUI/start_comfyui.sh`（`source venv/bin/activate && python3 main.py --listen 0.0.0.0 --port 8188`）
+**启动脚本**：`~/ComfyUI/start_comfyui.sh`（`source venv/bin/activate && python3 main.py --listen 0.0.0.0 --port 8188`）
 
 ---
 
@@ -81,15 +81,15 @@
 
 ```bash
 # 1. 高速网口挂载（MTU 9000 已配好）
-# 2. venv 整体 tar 过去（关键！）→ 相同绝对路径 /home/nvidia/ComfyUI/venv
-tar -cf - -C /home/nvidia/ComfyUI venv | ssh <user>@<node7> tar -xf - -C /home/nvidia/ComfyUI
+# 2. venv 整体 tar 过去（关键！）→ 相同绝对路径 ~/ComfyUI/venv
+tar -cf - -C ~/ComfyUI venv | ssh <user>@<node7> tar -xf - -C ~/ComfyUI
 
 # 3. 源码 rsync（排除 venv / models / output）
 rsync -av --no-whole-file --exclude venv --exclude models --exclude output \
-  /home/nvidia/ComfyUI/ <user>@<node7>:/home/nvidia/ComfyUI/
+  ~/ComfyUI/ <user>@<node7>:~/ComfyUI/
 
 # 4. 模型 rsync（73GB 走高速口 ~3 分钟）
-rsync -av /home/nvidia/ComfyUI/models/ <user>@<node7>:/home/nvidia/ComfyUI/models/
+rsync -av ~/ComfyUI/models/ <user>@<node7>:~/ComfyUI/models/
 ```
 
 **为什么 venv 用 tar 而不是 rsync**：venv 内有符号链接和相对路径，相同安装路径才能保证 Python 环境完整性。
@@ -112,7 +112,7 @@ rsync -av /home/nvidia/ComfyUI/models/ <user>@<node7>:/home/nvidia/ComfyUI/model
 | 2 | **源头残留嵌套重复目录** | `diffusion_models/diffusion_models`、`text_encoders/text_encoders` 重复嵌套（~68GB）+ `._` AppleDouble 文件 | 目标机清理一层嵌套 + `find -name '._*' -delete` |
 | 3 | **sudo 远程执行** | 需要权威凭证 | `sudo <cmd>` |
 | 4 | **启动验证时机** | 刚起进程就 curl 会失败 | 等 10-20s 再 curl 8188 |
-| 5 | **无开机自启** | 机器重启后 8188 不再自动起来 | 手动 `nohup bash /home/nvidia/ComfyUI/start_comfyui.sh > /tmp/comfy_4.8.log 2>&1 &` |
+| 5 | **无开机自启** | 机器重启后 8188 不再自动起来 | 手动 `nohup bash ~/ComfyUI/start_comfyui.sh > /tmp/comfy_4.8.log 2>&1 &` |
 | 6 | **apt 源不可达** | `ports.ubuntu.com` 在 Spark 上连不通（只通 HTTPS） | 系统包走 pip：`-i https://mirrors.aliyun.com/pypi/simple/` |
 
 第 3 台清理后 `models/` 最终体积 **72GB / 8 个文件**，HTTP 200 验证通过。
@@ -125,13 +125,13 @@ rsync -av /home/nvidia/ComfyUI/models/ <user>@<node7>:/home/nvidia/ComfyUI/model
 
 **模型下载**：走 ModelScope（不是 HF）：
 ```bash
-modelscope download --model Qwen/Qwen3.8-27B --local_dir /home/nvidia/model
+modelscope download --model Qwen/Qwen3.8-27B --local_dir ~/model
 ```
 51.77GB / 18 个 BF16 safetensors 分片，架构 `Qwen3_5ForConditionalGeneration`（多模态：图像+视频）。
 
 **vLLM 部署**（OpenAI 兼容 API :8000 + Gradio UI :8080）：
 ```bash
-cd /home/nvidia/llm && PATH=./venv/bin:$PATH nohup ./venv/bin/vllm serve /home/nvidia/model \
+cd ~/llm && PATH=./venv/bin:$PATH nohup ./venv/bin/vllm serve ~/model \
   --port 8000 --host 0.0.0.0 > vllm_serve3.log 2>&1 &
 ```
 - vLLM 0.27.1 + torch 2.13/CUDA13，aarch64 官方支持
@@ -161,7 +161,7 @@ cd /home/nvidia/llm && PATH=./venv/bin:$PATH nohup ./venv/bin/vllm serve /home/n
 ```bash
 # 启动任一台的 ComfyUI
 ssh <user>@<node6>
-cd /home/nvidia/ComfyUI && nohup bash start_comfyui.sh > /tmp/comfy.log 2>&1 &
+cd ~/ComfyUI && nohup bash start_comfyui.sh > /tmp/comfy.log 2>&1 &
 
 # 验证
 curl -s http://127.0.0.1:8188/ -o /dev/null -w "%{http_code}\n"
@@ -170,7 +170,7 @@ curl -s http://127.0.0.1:8188/ -o /dev/null -w "%{http_code}\n"
 sudo <cmd>
 
 # 清 AppleDouble
-find /home/nvidia/ComfyUI/models -name '._*' -delete
+find ~/ComfyUI/models -name '._*' -delete
 ```
 
 ---
