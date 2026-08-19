@@ -14,7 +14,6 @@
 |---|---|
 | 硬件 | NVIDIA DGX Spark x4（GB10 Superchip） |
 | IP | 10.0.0.XXX / .7 / .8 / .9 |
-| 账号 | `nvidia` / `nvidia`（ssh 密码认证） |
 | OS | Ubuntu 24.04（aarch64），DGX OS 7.2.3 |
 | GPU | Blackwell，sm_120，CUDA 13 |
 | 内存 | 121GB 统一内存（~124GB VRAM 视角），273GB/s 带宽 |
